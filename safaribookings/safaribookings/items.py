@@ -12,6 +12,8 @@ class SafaribookingsItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
     operator_name = scrapy.Field()
+    website = scrapy.Field()
+    destinations = scrapy.Field()
     profile = scrapy.Field()
     contact = scrapy.Field()
     #pass
