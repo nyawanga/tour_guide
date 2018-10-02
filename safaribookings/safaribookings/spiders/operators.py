@@ -13,9 +13,10 @@ from lxml import html
 
 class TourOperators(CrawlSpider):
     name = 'touroperators'
-    next_page_xpath = "//div/a[@class= 'btn btn--white btn--next']"
-    start_rls = ['https://www.safaribookings.com/operators/kenya/',
-                  'https://www.safaribookings.com/operators/kenya/2/'
+    baseurl = 'https://www.safaribookings.com/p'
+    next_page_xpath = '//div/a[@class= "btn btn--white btn--next"]'
+    start_rls = ['https://www.safaribookings.com/operators/kenya/page/2/',
+                  'https://www.safaribookings.com/operators/kenya/page/3/'
                 ]
 
     rules = (
@@ -25,10 +26,11 @@ class TourOperators(CrawlSpider):
 
     def parse_next_page(self, response):
         operators = response.selector.xpath("//span[starts-with(@class, 'favorite-save hide show-ti')]/@data-id").extract()
+        #yield {'operator': operators}
         for data_id in operators:
-            url = "{}/p{}".format(response.url, data_id)
-            scrapy.Request(url, callback = self.parse_operator)
-#            yield {'url': url}
+            url = "{}{}".format(self.baseurl, data_id)
+#            yield scrapy.Request(url, callback = self.parse_operator)
+            yield {'url': url}
 
     def parse_operator(self, response):
         items = SafaribookingsItem()
