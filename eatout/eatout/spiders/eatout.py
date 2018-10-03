@@ -13,7 +13,7 @@ from lxml import html
 
 class TourOperators(CrawlSpider):
     name = 'eatout'
-    items = EatoutItem()
+    #items = EatoutItem()
     baseurl = 'https://www.safaribookings.com/p'
     next_page_xpath = '//ul[@class="pagination"]/li'
     start_urls = ['https://eatout.co.ke/restaurants',
@@ -33,34 +33,36 @@ class TourOperators(CrawlSpider):
   #          yield scrapy.Request(next_page, callback= self.parse)
 
     def parse_next_page(self, response):
+        #items = EatoutItem()
         restraunts = response.selector.xpath("//div/h4[@class='media-heading ']/a/@href").extract()
         names = response.selector.xpath("//div/h4[@class='media-heading ']/a/text()").extract()
 
         for index, url in enumerate(restraunts):
-            self.items['restraunt_name'] = names[index]
-            yield scrapy.Request(url, callback = self.parse_restraunt)
+            items = EatoutItem()
+            items['restraunt_name'] = names[index]
+            yield scrapy.Request(url, callback = self.parse_restraunt, meta = {'items': items})
             #yield {'url': url}
 
     def parse_restraunt(self, response):
 #        items = SafaribookingsItem()
-#        items = {}
+        items = response.meta['items'] 
         loc = response.selector.xpath("//span[@class='address']/span/text()").extract()    #get the address
-        self.items['location'] = re.sub("\s{2,}", " ", "".join((i for i in loc)).strip() )      #join the address and replace space character
-        self.items['cuisine'] = response.selector.xpath("//p[@class='rest-details-cuisine no-link-color']/a/span/text()").extract()
-        self.items['telephone'] = response.selector.xpath("//p/a[@itemprop='telephone']/text()").extract()
-        self.items['description'] = response.selector.xpath("//div[@itemprop='description']/p/text()").extract_first()
+        items['location'] = re.sub("\s{2,}", " ", "".join((i for i in loc)).strip() )      #join the address and replace space character
+        items['cuisine'] = response.selector.xpath("//p[@class='rest-details-cuisine no-link-color']/a/span/text()").extract()
+        items['telephone'] = response.selector.xpath("//p/a[@itemprop='telephone']/text()").extract()
+        items['description'] = response.selector.xpath("//div[@itemprop='description']/p/text()").extract_first()
         first_table = response.selector.xpath("//div[@class='row']")[0]
         cusine_xpath = first_table.xpath('//ul/li/h5')
-        self.items['website'] = cusine_xpath.xpath('following-sibling::ul//a[@itemprop="url"]/@href').extract_first()
-        self.items['facebook'] = cusine_xpath.xpath('following-sibling::ul//a[@target="_blank"]/@href').extract_first()
+        items['website'] = cusine_xpath.xpath('following-sibling::ul//a[@itemprop="url"]/@href').extract_first()
+        items['facebook'] = cusine_xpath.xpath('following-sibling::ul//a[@target="_blank"]/@href').extract_first()
         facility = first_table.xpath('//div[@class="col-md-12"]//span/text()').extract()
-        self.items['facilities'] = re.sub("\s{2,}", " ", "".join((i.strip() for i in facility)))
+        items['facilities'] = re.sub("\s{2,}", " ", "".join((i.strip() for i in facility)))
         sec_table = response.selector.xpath("//div[@class='row']")[1]
         days = sec_table.xpath('//tbody/tr/td/text()').re(r"[a-zA-Z]+")
         vals = sec_table.xpath('//tbody/tr/td/text()').re(r"[^a-zA-Z]+")
         hours = [re.sub("\xa0", "", i.strip()) for i in vals[:len(days)]]
-        self.items['operation_hours'] = dict(zip(days, hours))
-        yield self.items
+        items['operation_hours'] = dict(zip(days, hours))
+        yield items
 
     def parse_contact(self, response):
         res = requests.get(response)
